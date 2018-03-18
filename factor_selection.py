@@ -13,7 +13,7 @@ import matplotlib.ticker as mtick
 
 from opdata import opdata
 
-from utils import Output
+from utils import *
 from data import load_data
 
 parser = argparse.ArgumentParser()
@@ -94,6 +94,7 @@ output.draw_decay_profile(ave_lag_ic, success_rate)
 
 # calculate fractiles
 # for each month, calculate the return for each fractile
+fractile_return_list = []
 for month_data_idx in range(len(month_data_ary) - 1):
 
     month_data = month_data_ary[month_data_idx]
@@ -123,13 +124,27 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
     # filter the None value
     factor_filter = factor_ary != None
-    return_filter = return_ary != None
 
-    data_filter = factor_filter & return_filter
-
-    factor_ary = factor_ary[data_filter]
-    return_ary = return_ary[data_filter]
+    factor_ary = factor_ary[factor_filter]
+    return_ary = return_ary[factor_filter]
 
     factor_rank = np.argsort(factor_ary)
-    return_rank = np.argsort(return_ary)
 
+    fractile_loc_list = []
+    stock_num = factor_ary.shape[0]
+    for idx in range(nr_fractile):
+        fractile_loc = int(stock_num * (idx + 1) / nr_fractile)
+        fractile_loc_list.append(fractile_loc)
+
+    return_list_per_fractile = [[] for _ in range(nr_fractile)]
+    for stock_idx in range(stock_num):
+        rank = factor_rank[stock_idx]
+        fractile_idx = get_fractile_idx(fractile_loc_list, rank)
+        stock_return = return_ary[stock_idx]
+        if stock_return != None:
+            return_list_per_fractile[fractile_idx].append(stock_return)
+    ave_return_list = [np.mean(e) for e in return_list_per_fractile]
+    ave_return_list.append(return_list[0])
+    
+    fractile_return_list.append(ave_return_list)
+    market_return_list.append(return_list[0])

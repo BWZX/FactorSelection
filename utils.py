@@ -9,6 +9,12 @@ import numpy as np
 plt.rcParams['axes.unicode_minus'] = False
 plt.style.use('ggplot')
 
+def get_fractile_idx(fractile_loc_list, rank):
+    for fractile_idx, loc in enumerate(fractile_loc_list):
+        if rank < loc:
+            return fractile_idx
+    return -1
+
 
 class Output:
     def __init__(self, factor_code, start_year, end_year):
