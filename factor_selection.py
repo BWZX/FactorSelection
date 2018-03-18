@@ -7,14 +7,15 @@ import scipy.stats as ss
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 
 from opdata import opdata
 
+from utils import Output
 
-# plt.rcParams['font.sans-serif'] = ['SimHei']
+
 plt.rcParams['axes.unicode_minus'] = False
 plt.style.use('ggplot')
-
 
 '''
 The factor selection includes 4 steps, as follow:
@@ -30,6 +31,8 @@ start_month = 1
 end_year = 2015
 end_month = 12
 stock_pool = "hs300"
+
+output = Output(factor_code, start_year, end_year)
 
 
 # load of get data from interface
@@ -52,67 +55,67 @@ else:
     pickle.dump(month_data_ary, f)
 
 
-rank_ic_ary = []
+# calculate rank ics for different lags
+
+rank_ic_ary_list = []
+for _ in range(12):
+    rank_ic_ary_list.append([])
 
 for month_data_idx in range(len(month_data_ary) - 1):
 
     month_data = month_data_ary[month_data_idx]
-    next_month_data = month_data_ary[month_data_idx + 1]
-
     code_list = month_data['code'].tolist()
     factor_list = month_data['momentum'].tolist()
     close_list = month_data['close'].tolist()
 
-    next_code_list = next_month_data['code'].tolist()
-    next_close_list = next_month_data['close'].tolist()
-
-    # calculate one month return for each stock in current month list
-    return_list = []
-    for idx, code in enumerate(code_list):
-        current_close = close_list[idx]
-        if code not in next_code_list:
-            # this stock is not included in the next month data
-            return_list.append(None)
+    for lag in range(1, 13):
+        if month_data_idx + lag >= len(month_data_ary):
             continue
-        next_idx = next_code_list.index(code)
-        next_close = next_close_list[next_idx]
-        return_list.append(next_close / current_close - 1)
+        future_month_data = month_data_ary[month_data_idx + 1]
+        future_code_list = future_month_data['code'].tolist()
+        future_close_list = future_month_data['close'].tolist()
 
-    # skip the first code, which should be the index code
-    factor_ary = np.asarray(factor_list[1:])
-    return_ary = np.asarray(return_list[1:])
+        # calculate return for each stock in current month list
+        return_list = []
+        for idx, code in enumerate(code_list):
+            current_close = close_list[idx]
+            if code not in future_code_list:
+                # this stock is not included in the future month data
+                return_list.append(None)
+                continue
+            next_idx = future_code_list.index(code)
+            next_close = future_close_list[next_idx]
+            return_list.append(next_close / current_close - 1)
 
-    # filter the None value
-    factor_filter = factor_ary != None
-    return_filter = return_ary != None
+        # skip the first code, which should be the index code
+        factor_ary = np.asarray(factor_list[1:])
+        return_ary = np.asarray(return_list[1:])
 
-    data_filter = factor_filter & return_filter
+        # filter the None value
+        factor_filter = factor_ary != None
+        return_filter = return_ary != None
 
-    factor_ary = factor_ary[data_filter]
-    return_ary = return_ary[data_filter]
+        data_filter = factor_filter & return_filter
 
-    factor_rank = np.argsort(factor_ary)
-    return_rank = np.argsort(return_ary)
+        factor_ary = factor_ary[data_filter]
+        return_ary = return_ary[data_filter]
 
-    rank_ic, _ = pearsonr(return_rank, factor_rank)
+        factor_rank = np.argsort(factor_ary)
+        return_rank = np.argsort(return_ary)
 
-    rank_ic_ary.append(rank_ic)
+        rank_ic, _ = pearsonr(return_rank, factor_rank)
 
-fig = plt.figure()
+        rank_ic_ary_list[lag - 1].append(rank_ic)
 
-plt.bar(np.arange(1, len(rank_ic_ary)+1), rank_ic_ary)
-rank_ic_12_ave = []
-for idx in range(12, len(rank_ic_ary)):
-    rank_ic_12_ave.append(np.mean(rank_ic_ary[idx-12:idx+1]))
-plt.plot(np.arange(12, len(rank_ic_ary)), rank_ic_12_ave, color='b', linewidth=3)
 
-p1= r'rank_ic.png'
-fig.savefig(p1)
-plt.clf()
-plt.close()
+# draw rank IC
+output.draw_rank_ic(rank_ic_ary_list[0])
 
-t_stat = ss.ttest_1samp(rank_ic_ary, 0)
-print(t_stat)
 
-import pdb
-pdb.set_trace()
+# calculate data for decay profile and draw
+ave_lag_ic = []
+success_rate = []
+for rank_ic_ary in rank_ic_ary_list:
+    ave_lag_ic.append(np.mean(rank_ic_ary))
+    success_rate.append(len([e for e in rank_ic_ary if e > 0]) / len(rank_ic_ary))
+output.draw_decay_profile(ave_lag_ic, success_rate)

@@ -1,1 +1,3 @@
 factor_selection_data
+*.png
+__pycache__
