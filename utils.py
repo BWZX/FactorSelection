@@ -3,10 +3,12 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
-from scipy.stats.stats import pearsonr
 import scipy.stats as ss
-
 import numpy as np
+
+plt.rcParams['axes.unicode_minus'] = False
+plt.style.use('ggplot')
+
 
 class Output:
     def __init__(self, factor_code, start_year, end_year):
