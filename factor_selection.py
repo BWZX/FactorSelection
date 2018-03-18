@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--factor_code', default='momentum')
 parser.add_argument('--start_year', type=int, default=2010)
 parser.add_argument('--end_year', type=int, default=2015)
-parser.add_argument('--nr_fractile', type=int, default=10)
+parser.add_argument('--nr_fractile', type=int, default=5)
 args = parser.parse_args()
 
 month_data_ary = load_data('factor_selection_data', args.start_year, args.end_year)
@@ -132,11 +132,11 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
     fractile_loc_list = []
     stock_num = factor_ary.shape[0]
-    for idx in range(nr_fractile):
-        fractile_loc = int(stock_num * (idx + 1) / nr_fractile)
+    for idx in range(args.nr_fractile):
+        fractile_loc = int(stock_num * (idx + 1) / args.nr_fractile)
         fractile_loc_list.append(fractile_loc)
 
-    return_list_per_fractile = [[] for _ in range(nr_fractile)]
+    return_list_per_fractile = [[] for _ in range(args.nr_fractile)]
     for stock_idx in range(stock_num):
         rank = factor_rank[stock_idx]
         fractile_idx = get_fractile_idx(fractile_loc_list, rank)
@@ -145,6 +145,17 @@ for month_data_idx in range(len(month_data_ary) - 1):
             return_list_per_fractile[fractile_idx].append(stock_return)
     ave_return_list = [np.mean(e) for e in return_list_per_fractile]
     ave_return_list.append(return_list[0])
-    
+
     fractile_return_list.append(ave_return_list)
-    market_return_list.append(return_list[0])
+
+sim_return = np.ones((args.nr_fractile + 1, len(fractile_return_list) + 1)) * 100
+
+for month_idx, fractile_return in enumerate(fractile_return_list):
+    for fractile_idx in range(args.nr_fractile + 1):
+        sim_return[fractile_idx, month_idx + 1] = \
+            sim_return[fractile_idx, month_idx] * (1 + fractile_return[fractile_idx])
+
+output.draw_fractile(sim_return)
+
+# import pdb
+# pdb.set_trace()

@@ -67,3 +67,21 @@ class Output:
         plt.clf()
         plt.close()
 
+    def draw_fractile(self, sim_return):
+        fig, ax = plt.subplots()
+
+        upper_y = np.max(sim_return) + 100
+
+        for line_idx in range(sim_return.shape[0]):
+            label = str(line_idx + 1) if line_idx < sim_return.shape[0] - 1 else "Market"
+            ax.plot(np.arange(0, sim_return.shape[1]), sim_return[line_idx], color='b', linewidth=3, label=label)
+            ax.set_ylim(0, upper_y)
+        ax.legend(loc='upper left')
+        ax.set_xlabel('Monthly (from %d to %d)' % (self.start_year, self.end_year))
+        
+        plt.title('Fractile')
+        
+        fig.savefig(self._filename('fractile'))
+        plt.clf()
+        plt.close()
+
