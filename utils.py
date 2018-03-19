@@ -74,7 +74,8 @@ class Output:
 
         for line_idx in range(sim_return.shape[0]):
             label = str(line_idx + 1) if line_idx < sim_return.shape[0] - 1 else "Market"
-            ax.plot(np.arange(0, sim_return.shape[1]), sim_return[line_idx], color='b', linewidth=3, label=label)
+            color = (line_idx / sim_return.shape[0], 0, 0)
+            ax.plot(np.arange(0, sim_return.shape[1]), sim_return[line_idx], color=color, linewidth=3, label=label)
             ax.set_ylim(0, upper_y)
         ax.legend(loc='upper left')
         ax.set_xlabel('Monthly (from %d to %d)' % (self.start_year, self.end_year))
