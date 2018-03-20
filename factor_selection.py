@@ -18,12 +18,12 @@ from data import load_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--factor_code', default='momentum')
-parser.add_argument('--start_year', type=int, default=2010)
-parser.add_argument('--end_year', type=int, default=2015)
+parser.add_argument('--start_year', type=int, default=2008)
+parser.add_argument('--end_year', type=int, default=2012)
 parser.add_argument('--nr_fractile', type=int, default=5)
 args = parser.parse_args()
 
-month_data_ary = load_data('factor_selection_data', args.start_year, args.end_year)
+month_data_ary = load_data('factor_selection_data_2008_2012', args.start_year, args.end_year)
 
 output = Output(args.factor_code, args.start_year, args.end_year)
 

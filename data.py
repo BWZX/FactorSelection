@@ -1,4 +1,5 @@
 import os
+from opdata import opdata
 import pickle
 
 def load_data(filename, start_year, end_year):
