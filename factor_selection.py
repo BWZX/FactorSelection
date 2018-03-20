@@ -157,5 +157,14 @@ for month_idx, fractile_return in enumerate(fractile_return_list):
 
 output.draw_fractile(sim_return)
 
-# import pdb
-# pdb.set_trace()
+fractile_return_ary = np.transpose(np.asarray(fractile_return_list))
+
+market_metrics = Metrics(fractile_return_ary[-1,:])
+
+fractile_metrics_list = []
+for fractile_idx in range(args.nr_fractile):
+    fractile_metrics_list.append(Metrics(fractile_return_ary[fractile_idx,:], market_metrics, args.end_year - args.start_year + 1))
+fractile_metrics_list.append(market_metrics)
+
+
+output.show_fractile_table(fractile_metrics_list)

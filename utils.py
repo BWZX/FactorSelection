@@ -86,3 +86,56 @@ class Output:
         plt.clf()
         plt.close()
 
+    def show_fractile_table(self, metrics_list):
+        attr_list = ["total_return", "active_return", "tracking_error", "information_ratio", "ir_t_stat", "monthly_success_rate", "turnover", "volatility", "sharp_ratio", "sr_t_stat", "beta", "alpha"]
+        header_width = 20
+        col_width = 15
+        # print table header
+        print(''.ljust(header_width), end="")
+        for m_idx in range(len(metrics_list)):
+            if m_idx != len(metrics_list) - 1:
+                print(("Fractile %d" % (m_idx + 1)).rjust(col_width), end="")
+            else:
+                print("Market".rjust(col_width), end="")
+        print("")
+
+        for attr_name in attr_list:
+            print(attr_name.ljust(header_width), end="")
+            for metrics in metrics_list:
+                val = getattr(metrics, attr_name) or ""
+                val_str = "%.2f" % val if type(val) != str else val
+                print(val_str.rjust(col_width), end="")
+            print("")
+            
+
+class Metrics:
+    def __init__(self, return_ary, market_metrics=None, years=None):
+
+        self.return_ary = return_ary
+
+        self.total_return = np.mean(return_ary) * 12
+        self.volatility = np.std(return_ary) * np.sqrt(12)
+        self.sharp_ratio = self.total_return / self.volatility
+
+        if market_metrics != None:
+            active_return_ary = self.return_ary - market_metrics.return_ary
+            self.active_return = np.mean(active_return_ary) * 12
+            self.tracking_error = np.std(active_return_ary) * np.sqrt(12)
+            self.information_ratio = self.active_return / self.tracking_error
+            self.ir_t_stat = self.information_ratio * np.sqrt(years) if years != None else None
+            self.monthly_success_rate = len([e for e in active_return_ary if e > 0]) / len(active_return_ary)
+            self.sr_t_stat = (self.sharp_ratio - market_metrics.sharp_ratio) / (np.sqrt(2 / years))
+
+            self.turnover = None
+            self.beta = None
+            self.alpha = None
+        else:
+            self.active_return = None
+            self.tracking_error = None
+            self.information_ratio = None
+            self.ir_t_stat = None
+            self.monthly_success_rate = None
+            self.sr_t_stat = None
+            self.turnover = None
+            self.beta = None
+            self.alpha = None
