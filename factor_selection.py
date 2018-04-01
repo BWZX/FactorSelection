@@ -17,13 +17,14 @@ from utils import *
 from data import load_data
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--factor_code', default='momentum')
-parser.add_argument('--start_year', type=int, default=2008)
-parser.add_argument('--end_year', type=int, default=2012)
+parser.add_argument('--factor_code', default='rsi12')
+parser.add_argument('--start_year', type=int, default=2010)
+parser.add_argument('--end_year', type=int, default=2015)
 parser.add_argument('--nr_fractile', type=int, default=5)
+parser.add_argument('--equ_wt_benchmark', type=bool, default=True)
 args = parser.parse_args()
 
-month_data_ary = load_data('factor_selection_data_2008_2012', args.start_year, args.end_year)
+month_data_ary = load_data('data_2010_2015.pkl', args.start_year, args.end_year)
 
 output = Output(args.factor_code, args.start_year, args.end_year)
 
@@ -117,6 +118,10 @@ for month_data_idx in range(len(month_data_ary) - 1):
         next_idx = next_code_list.index(code)
         next_close = next_close_list[next_idx]
         return_list.append(next_close / current_close - 1)
+
+    if args.equ_wt_benchmark == True:
+        stock_return_list = [e for e in return_list[1:] if e is not None]
+        return_list[0] = np.mean(stock_return_list)
 
     # skip the first code, which should be the index code
     factor_ary = np.asarray(factor_list[1:])
