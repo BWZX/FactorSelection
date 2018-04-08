@@ -60,8 +60,8 @@ for month_data_idx in range(len(month_data_ary) - 1):
             return_list.append(next_close / current_close - 1)
 
         # skip the first code, which should be the index code
-        factor_ary = np.asarray(factor_list[1:])
-        return_ary = np.asarray(return_list[1:])
+        factor_ary = np.asarray(factor_list[1:], dtype=np.float32)
+        return_ary = np.asarray(return_list[1:], dtype=np.float32)
 
         # filter the None value
         factor_filter = factor_ary != None
@@ -122,8 +122,8 @@ for month_data_idx in range(len(month_data_ary) - 1):
         return_list[0] = np.mean(stock_return_list)
 
     # skip the first code, which should be the index code
-    factor_ary = np.asarray(factor_list[1:])
-    return_ary = np.asarray(return_list[1:])
+    factor_ary = np.asarray(factor_list[1:], dtype=np.float32)
+    return_ary = np.asarray(return_list[1:], dtype=np.float32)
 
     # filter the None value
     factor_filter = factor_ary != None
@@ -145,7 +145,7 @@ for month_data_idx in range(len(month_data_ary) - 1):
         rank = factor_rank[stock_idx]
         fractile_idx = get_fractile_idx(fractile_loc_list, rank)
         stock_return = return_ary[stock_idx]
-        if stock_return != None:
+        if stock_return != None and np.isnan(stock_return) == False:
             return_list_per_fractile[fractile_idx].append(stock_return)
     ave_return_list = [np.mean(e) for e in return_list_per_fractile]
     ave_return_list.append(return_list[0])
@@ -161,7 +161,7 @@ for month_idx, fractile_return in enumerate(fractile_return_list):
 
 output.draw_fractile(sim_return)
 
-fractile_return_ary = np.transpose(np.asarray(fractile_return_list))
+fractile_return_ary = np.transpose(np.asarray(fractile_return_list, dtype=np.float32))
 
 market_metrics = Metrics(fractile_return_ary[-1,:])
 
