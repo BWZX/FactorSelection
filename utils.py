@@ -1,4 +1,6 @@
 import matplotlib
+import pdb
+pdb.set_trace()
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -6,8 +8,17 @@ import matplotlib.ticker as mtick
 import scipy.stats as ss
 import numpy as np
 
+from cfgs.config import cfg
+
 plt.rcParams['axes.unicode_minus'] = False
 plt.style.use('ggplot')
+
+def get_sort_idx(items):
+    idxes = np.argsort(-items)
+    sort_idxes = np.zeros_like(items)
+    for idx, ele in enumerate(idxes):
+        sort_idxes[ele] = idx
+    return sort_idxes
 
 def get_fractile_idx(fractile_loc_list, rank):
     for fractile_idx, loc in enumerate(fractile_loc_list):
@@ -23,7 +34,7 @@ class Output:
         self.end_year = end_year
 
     def _filename(self, name):
-        return '%s (%d-%d): %s.png' % (self.factor_code, self.start_year, self.end_year, name)
+        return '%s/%s (%d-%d): %s.png' % (cfg.result_dir, self.factor_code, self.start_year, self.end_year, name)
 
     def draw_rank_ic(self, rank_ic_ary):
         rank_ic_12_ave = []
@@ -40,7 +51,7 @@ class Output:
         ax.set_xlabel('Monthly (from %d to %d)' % (self.start_year, self.end_year))
         
         t_stat = ss.ttest_1samp(rank_ic_ary, 0)
-        plt.title('Rank ICs (t-stat=%.2f)' % t_stat.statistic)
+        plt.title('Rank ICs (t-stat=%.2f, ic=%.4f)' % (t_stat.statistic, np.mean(rank_ic_ary)))
         
         fig.savefig(self._filename('rank_ic'))
         plt.clf()

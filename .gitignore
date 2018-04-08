@@ -1,3 +1,6 @@
 *.pkl
 *.png
-__pycache__
+data
+result
+current_factors
+*__pycache__

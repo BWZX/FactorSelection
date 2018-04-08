@@ -17,14 +17,14 @@ from utils import *
 from data import load_data
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--factor_code', default='rsi12')
+parser.add_argument('--factor_code', default='eps')
 parser.add_argument('--start_year', type=int, default=2010)
-parser.add_argument('--end_year', type=int, default=2015)
+parser.add_argument('--end_year', type=int, default=2017)
 parser.add_argument('--nr_fractile', type=int, default=5)
 parser.add_argument('--equ_wt_benchmark', type=bool, default=True)
 args = parser.parse_args()
 
-month_data_ary = load_data('data_2010_2015.pkl', args.start_year, args.end_year)
+month_data_ary = load_data('data_hs300_2010_2017_1m.pkl', args.start_year, args.end_year)
 
 output = Output(args.factor_code, args.start_year, args.end_year)
 
@@ -36,7 +36,7 @@ for _ in range(12):
 for month_data_idx in range(len(month_data_ary) - 1):
 
     month_data = month_data_ary[month_data_idx]
-    code_list = month_data['code'].tolist()
+    code_list = month_data['code_x'].tolist()
     factor_list = month_data[args.factor_code].tolist()
     close_list = month_data['close'].tolist()
 
@@ -44,7 +44,7 @@ for month_data_idx in range(len(month_data_ary) - 1):
         if month_data_idx + lag >= len(month_data_ary):
             continue
         future_month_data = month_data_ary[month_data_idx + 1]
-        future_code_list = future_month_data['code'].tolist()
+        future_code_list = future_month_data['code_x'].tolist()
         future_close_list = future_month_data['close'].tolist()
 
         # calculate return for each stock in current month list
@@ -72,8 +72,10 @@ for month_data_idx in range(len(month_data_ary) - 1):
         factor_ary = factor_ary[data_filter]
         return_ary = return_ary[data_filter]
 
-        factor_rank = np.argsort(factor_ary)
-        return_rank = np.argsort(return_ary)
+        # factor_rank = np.argsort(factor_ary)
+        # return_rank = np.argsort(return_ary)
+        factor_rank = get_sort_idx(factor_ary)
+        return_rank = get_sort_idx(return_ary)
 
         rank_ic, _ = pearsonr(return_rank, factor_rank)
 
@@ -82,6 +84,9 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
 # draw rank IC
 output.draw_rank_ic(rank_ic_ary_list[0])
+
+# import pdb
+# pdb.set_trace()
 
 
 # calculate data for decay profile and draw
@@ -99,12 +104,12 @@ fractile_return_list = []
 for month_data_idx in range(len(month_data_ary) - 1):
 
     month_data = month_data_ary[month_data_idx]
-    code_list = month_data['code'].tolist()
+    code_list = month_data['code_x'].tolist()
     factor_list = month_data[args.factor_code].tolist()
     close_list = month_data['close'].tolist()
 
     next_month_data = month_data_ary[month_data_idx + 1]
-    next_code_list = next_month_data['code'].tolist()
+    next_code_list = next_month_data['code_x'].tolist()
     next_close_list = next_month_data['close'].tolist()
 
     # calculate return for each stock in current month list
@@ -133,7 +138,8 @@ for month_data_idx in range(len(month_data_ary) - 1):
     factor_ary = factor_ary[factor_filter]
     return_ary = return_ary[factor_filter]
 
-    factor_rank = np.argsort(factor_ary)
+    # factor_rank = np.argsort(factor_ary)
+    factor_rank = get_sort_idx(factor_ary)
 
     fractile_loc_list = []
     stock_num = factor_ary.shape[0]
@@ -173,3 +179,6 @@ fractile_metrics_list.append(market_metrics)
 
 
 output.show_fractile_table(fractile_metrics_list)
+
+# import pdb
+# pdb.set_trace()
