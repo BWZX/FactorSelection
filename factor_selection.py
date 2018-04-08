@@ -72,8 +72,6 @@ for month_data_idx in range(len(month_data_ary) - 1):
         factor_ary = factor_ary[data_filter]
         return_ary = return_ary[data_filter]
 
-        # factor_rank = np.argsort(factor_ary)
-        # return_rank = np.argsort(return_ary)
         factor_rank = get_sort_idx(factor_ary)
         return_rank = get_sort_idx(return_ary)
 
@@ -81,13 +79,8 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
         rank_ic_ary_list[lag - 1].append(rank_ic)
 
-
 # draw rank IC
 output.draw_rank_ic(rank_ic_ary_list[0])
-
-# import pdb
-# pdb.set_trace()
-
 
 # calculate data for decay profile and draw
 ave_lag_ic = []
@@ -179,6 +172,3 @@ fractile_metrics_list.append(market_metrics)
 
 
 output.show_fractile_table(fractile_metrics_list)
-
-# import pdb
-# pdb.set_trace()
