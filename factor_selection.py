@@ -18,15 +18,18 @@ from data import load_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--factor_code', default='eps')
-parser.add_argument('--start_year', type=int, default=2014)
+parser.add_argument('--start_year', type=int, default=2010)
 parser.add_argument('--end_year', type=int, default=2017)
 parser.add_argument('--nr_fractile', type=int, default=5)
 parser.add_argument('--equ_wt_benchmark', type=bool, default=True)
+parser.add_argument('--data_file', default="allstocks_2010_2017_financial_1m.pkl")
 args = parser.parse_args()
 
-month_data_ary = load_data('data_hs300_2014_2017_1m.pkl', args.start_year, args.end_year)
+month_data_ary = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
 
-output = Output(args.factor_code, args.start_year, args.end_year)
+result_dir = args.data_file.split('.')[0]
+
+output = Output(args.factor_code, args.start_year, args.end_year, result_dir)
 
 # calculate rank ics for different lags
 rank_ic_ary_list = []
@@ -89,7 +92,6 @@ for rank_ic_ary in rank_ic_ary_list:
     ave_lag_ic.append(np.mean(rank_ic_ary))
     success_rate.append(len([e for e in rank_ic_ary if e > 0]) / len(rank_ic_ary))
 output.draw_decay_profile(ave_lag_ic, success_rate)
-
 
 # calculate fractiles
 # for each month, calculate the return for each fractile

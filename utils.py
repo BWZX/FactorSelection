@@ -1,3 +1,4 @@
+import os
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -26,13 +27,17 @@ def get_fractile_idx(fractile_loc_list, rank):
 
 
 class Output:
-    def __init__(self, factor_code, start_year, end_year):
+    def __init__(self, factor_code, start_year, end_year, result_dir, period):
         self.factor_code = factor_code
         self.start_year = start_year
         self.end_year = end_year
+        self.result_dir = os.path.join(cfg.result_dir, result_dir)
+        if os.path.isdir(self.result_dir) == False:
+            os.makedirs(self.result_dir)
+        self.period = period
 
     def _filename(self, name):
-        return '%s/%s (%d-%d): %s.png' % (cfg.result_dir, self.factor_code, self.start_year, self.end_year, name)
+        return '%s/%s (%d-%d): %s.png' % (self.result_dir, self.factor_code, self.start_year, self.end_year, name)
 
     def draw_rank_ic(self, rank_ic_ary):
         rank_ic_12_ave = []
@@ -42,11 +47,11 @@ class Output:
     
         fig, ax = plt.subplots()
         ax.bar(np.arange(1, len(rank_ic_ary)+1), np.asarray(rank_ic_ary) * 100, label='Rank IC')
-        ax.plot(np.arange(12, len(rank_ic_ary)), np.asarray(rank_ic_12_ave) * 100, color='b', linewidth=3, label='12m avg')
+        ax.plot(np.arange(12, len(rank_ic_ary)), np.asarray(rank_ic_12_ave) * 100, color='b', linewidth=3, label='12 peirod avg')
         ax.yaxis.set_major_formatter(mtick.PercentFormatter())
         ax.set_ylim(-40, 40)
         ax.legend(loc='upper right')
-        ax.set_xlabel('Monthly (from %d to %d)' % (self.start_year, self.end_year))
+        ax.set_xlabel('%s (from %d to %d)' % (self.period, self.start_year, self.end_year))
         
         t_stat = ss.ttest_1samp(rank_ic_ary, 0)
         plt.title('Rank ICs (t-stat=%.2f, ic=%.4f)' % (t_stat.statistic, np.mean(rank_ic_ary)))
@@ -87,7 +92,7 @@ class Output:
             ax.plot(np.arange(0, sim_return.shape[1]), sim_return[line_idx], color=color, linewidth=3, label=label)
             ax.set_ylim(0, upper_y)
         ax.legend(loc='upper left')
-        ax.set_xlabel('Monthly (from %d to %d)' % (self.start_year, self.end_year))
+        ax.set_xlabel('%s (from %d to %d)' % (self.period, self.start_year, self.end_year))
         
         plt.title('Fractile')
         

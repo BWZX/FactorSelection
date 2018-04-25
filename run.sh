@@ -1,4 +1,20 @@
-python3 factor_selection.py --factor_code adratio
+# python3 factor_selection.py --factor_code rsi_12_1d
+# python3 factor_selection.py --factor_code rsi_12_3d
+# python3 factor_selection.py --factor_code rsi_12_5d
+# python3 factor_selection.py --factor_code rsi_12_10d
+# python3 factor_selection.py --factor_code mom_12_1d
+# python3 factor_selection.py --factor_code mom_12_3d
+# python3 factor_selection.py --factor_code mom_12_5d
+# python3 factor_selection.py --factor_code mom_12_10d
+# python3 factor_selection.py --factor_code rocr_12_1d
+# python3 factor_selection.py --factor_code rocr_12_3d
+# python3 factor_selection.py --factor_code rocr_12_5d
+# python3 factor_selection.py --factor_code rocr_12_10d
+# python3 factor_selection.py --factor_code trix_12_1d
+# python3 factor_selection.py --factor_code trix_12_3d
+# python3 factor_selection.py --factor_code trix_12_5d
+# python3 factor_selection.py --factor_code trix_12_10d
+
 python3 factor_selection.py --factor_code arturndays
 python3 factor_selection.py --factor_code arturnover
 python3 factor_selection.py --factor_code bips
