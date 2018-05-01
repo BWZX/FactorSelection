@@ -1,4 +1,6 @@
 import os
+import csv
+import pandas as pd
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -25,6 +27,13 @@ def get_fractile_idx(fractile_loc_list, rank):
             return fractile_idx
     return -1
 
+def filter_stocks(code_list, factor_list=None, close_list=None):
+    selected_idx = [idx for idx, e in enumerate(code_list) if pd.isnull(e) == False]
+    code_list = [code_list[e] for e in selected_idx]
+    factor_list = [factor_list[e] for e in selected_idx] if factor_list is not None else None
+    close_list = [close_list[e] for e in selected_idx] if close_list is not None else None
+    return code_list, factor_list, close_list
+
 
 class Output:
     def __init__(self, factor_code, start_year, end_year, result_dir, period):
@@ -36,8 +45,8 @@ class Output:
             os.makedirs(self.result_dir)
         self.period = period
 
-    def _filename(self, name):
-        return '%s/%s (%d-%d): %s.png' % (self.result_dir, self.factor_code, self.start_year, self.end_year, name)
+    def _filename(self, name, suffix='png'):
+        return '%s/%s (%d-%d): %s.%s' % (self.result_dir, self.factor_code, self.start_year, self.end_year, name, suffix)
 
     def draw_rank_ic(self, rank_ic_ary):
         rank_ic_12_ave = []
@@ -88,7 +97,7 @@ class Output:
 
         for line_idx in range(sim_return.shape[0]):
             label = str(line_idx + 1) if line_idx < sim_return.shape[0] - 1 else "Market"
-            color = (line_idx / sim_return.shape[0], 0, 0)
+            color = (1 - line_idx / sim_return.shape[0], 0, 0) if line_idx < sim_return.shape[0] - 1 else (0, 0, 1)
             ax.plot(np.arange(0, sim_return.shape[1]), sim_return[line_idx], color=color, linewidth=3, label=label)
             ax.set_ylim(0, upper_y)
         ax.legend(loc='upper left')
@@ -104,22 +113,36 @@ class Output:
         attr_list = ["total_return", "active_return", "tracking_error", "information_ratio", "ir_t_stat", "monthly_success_rate", "turnover", "volatility", "sharp_ratio", "sr_t_stat", "beta", "alpha"]
         header_width = 20
         col_width = 15
+        lines = []
+        line = [""]
         # print table header
         print(''.ljust(header_width), end="")
         for m_idx in range(len(metrics_list)):
             if m_idx != len(metrics_list) - 1:
                 print(("Fractile %d" % (m_idx + 1)).rjust(col_width), end="")
+                line.append("Fractile %d" % (m_idx + 1))
             else:
                 print("Market".rjust(col_width), end="")
+                line.append("Market")
         print("")
+        lines.append(line)
 
         for attr_name in attr_list:
+            line = []
             print(attr_name.ljust(header_width), end="")
+            line.append(attr_name)
             for metrics in metrics_list:
                 val = getattr(metrics, attr_name) or ""
                 val_str = "%.2f" % val if type(val) != str else val
                 print(val_str.rjust(col_width), end="")
+                line.append(val_str)
             print("")
+            lines.append(line)
+
+        with open(self._filename('detail', 'csv'), 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            for line in lines:
+                writer.writerow(line)
             
 
 class Metrics:

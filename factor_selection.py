@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import pickle
 from scipy.stats.stats import pearsonr
@@ -20,16 +21,17 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--factor_code', default='eps')
 parser.add_argument('--start_year', type=int, default=2010)
 parser.add_argument('--end_year', type=int, default=2017)
+parser.add_argument('--period', default='2w')
 parser.add_argument('--nr_fractile', type=int, default=5)
 parser.add_argument('--equ_wt_benchmark', type=bool, default=True)
-parser.add_argument('--data_file', default="allstocks_2010_2017_financial_1m.pkl")
+parser.add_argument('--data_file', default="allstocks_2010_2017_technical_2w_1.pkl")
 args = parser.parse_args()
 
 month_data_ary = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
 
 result_dir = args.data_file.split('.')[0]
 
-output = Output(args.factor_code, args.start_year, args.end_year, result_dir)
+output = Output(args.factor_code, args.start_year, args.end_year, result_dir, args.period)
 
 # calculate rank ics for different lags
 rank_ic_ary_list = []
@@ -43,12 +45,16 @@ for month_data_idx in range(len(month_data_ary) - 1):
     factor_list = month_data[args.factor_code].tolist()
     close_list = month_data['close'].tolist()
 
+    code_list, factor_list, close_list = filter_stocks(code_list=code_list, factor_list=factor_list, close_list=close_list)
+
     for lag in range(1, 13):
         if month_data_idx + lag >= len(month_data_ary):
             continue
         future_month_data = month_data_ary[month_data_idx + 1]
         future_code_list = future_month_data['code_x'].tolist()
         future_close_list = future_month_data['close'].tolist()
+
+        future_code_list, _, future_close_list = filter_stocks(code_list=future_code_list, close_list=future_close_list)
 
         # calculate return for each stock in current month list
         return_list = []
@@ -103,9 +109,15 @@ for month_data_idx in range(len(month_data_ary) - 1):
     factor_list = month_data[args.factor_code].tolist()
     close_list = month_data['close'].tolist()
 
+    # filter out those stocks that do not exist
+    code_list, factor_list, close_list = filter_stocks(code_list=code_list, factor_list=factor_list, close_list=close_list)
+
     next_month_data = month_data_ary[month_data_idx + 1]
     next_code_list = next_month_data['code_x'].tolist()
     next_close_list = next_month_data['close'].tolist()
+
+    # filter out those stocks that do not exist
+    next_code_list, _, next_close_list = filter_stocks(code_list=next_code_list, close_list=next_close_list)
 
     # calculate return for each stock in current month list
     return_list = []
@@ -149,6 +161,7 @@ for month_data_idx in range(len(month_data_ary) - 1):
         stock_return = return_ary[stock_idx]
         if stock_return != None and np.isnan(stock_return) == False:
             return_list_per_fractile[fractile_idx].append(stock_return)
+
     ave_return_list = [np.mean(e) for e in return_list_per_fractile]
     ave_return_list.append(return_list[0])
 
