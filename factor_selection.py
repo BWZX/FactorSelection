@@ -17,14 +17,15 @@ from opdata import opdata
 from utils import *
 from data import load_data
 
+from cfgs.config import cfg
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--factor_code', default='eps')
+parser.add_argument('--factor_code', required=True)
 parser.add_argument('--start_year', type=int, default=2010)
 parser.add_argument('--end_year', type=int, default=2017)
-parser.add_argument('--period', default='2w')
-parser.add_argument('--nr_fractile', type=int, default=5)
-parser.add_argument('--equ_wt_benchmark', type=bool, default=True)
-parser.add_argument('--data_file', default="allstocks_2010_2017_technical_2w_1.pkl")
+parser.add_argument('--period', default='1m')
+parser.add_argument('--data_file', default="allstocks_2010_2017_financial_1m.pkl")
 args = parser.parse_args()
 
 month_data_ary = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
@@ -131,7 +132,7 @@ for month_data_idx in range(len(month_data_ary) - 1):
         next_close = next_close_list[next_idx]
         return_list.append(next_close / current_close - 1)
 
-    if args.equ_wt_benchmark == True:
+    if cfg.equ_wt_benchmark == True:
         stock_return_list = [e for e in return_list[1:] if e is not None]
         return_list[0] = np.mean(stock_return_list)
 
@@ -150,11 +151,11 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
     fractile_loc_list = []
     stock_num = factor_ary.shape[0]
-    for idx in range(args.nr_fractile):
-        fractile_loc = int(stock_num * (idx + 1) / args.nr_fractile)
+    for idx in range(cfg.nr_fractile):
+        fractile_loc = int(stock_num * (idx + 1) / cfg.nr_fractile)
         fractile_loc_list.append(fractile_loc)
 
-    return_list_per_fractile = [[] for _ in range(args.nr_fractile)]
+    return_list_per_fractile = [[] for _ in range(cfg.nr_fractile)]
     for stock_idx in range(stock_num):
         rank = factor_rank[stock_idx]
         fractile_idx = get_fractile_idx(fractile_loc_list, rank)
@@ -167,10 +168,10 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
     fractile_return_list.append(ave_return_list)
 
-sim_return = np.ones((args.nr_fractile + 1, len(fractile_return_list) + 1)) * 100
+sim_return = np.ones((cfg.nr_fractile + 1, len(fractile_return_list) + 1)) * 100
 
 for month_idx, fractile_return in enumerate(fractile_return_list):
-    for fractile_idx in range(args.nr_fractile + 1):
+    for fractile_idx in range(cfg.nr_fractile + 1):
         sim_return[fractile_idx, month_idx + 1] = \
             sim_return[fractile_idx, month_idx] * (1 + fractile_return[fractile_idx])
 
@@ -181,7 +182,7 @@ fractile_return_ary = np.transpose(np.asarray(fractile_return_list, dtype=np.flo
 market_metrics = Metrics(fractile_return_ary[-1,:])
 
 fractile_metrics_list = []
-for fractile_idx in range(args.nr_fractile):
+for fractile_idx in range(cfg.nr_fractile):
     fractile_metrics_list.append(Metrics(fractile_return_ary[fractile_idx,:], market_metrics, args.end_year - args.start_year + 1))
 fractile_metrics_list.append(market_metrics)
 
