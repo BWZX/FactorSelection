@@ -28,41 +28,41 @@ parser.add_argument('--period', default='1m')
 parser.add_argument('--data_file', default="allstocks_2010_2017_financial_1m.pkl")
 args = parser.parse_args()
 
-month_data_ary = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
+data_seq_list = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
 
 result_dir = args.data_file.split('.')[0]
 
 output = Output(args.factor_code, args.start_year, args.end_year, result_dir, args.period)
 
-# calculate rank ics for different lags
+# calculate rank ICs for different lags
 rank_ic_ary_list = []
 for _ in range(12):
     rank_ic_ary_list.append([])
 
-for month_data_idx in range(len(month_data_ary) - 1):
+for time_idx in range(len(data_seq_list) - 1):
 
-    month_data = month_data_ary[month_data_idx]
-    code_list = month_data['code_x'].tolist()
-    factor_list = month_data[args.factor_code].tolist()
-    close_list = month_data['close'].tolist()
+    data_point = data_seq_list[time_idx]
+    code_list = data_point['code'].tolist()
+    factor_list = data_point[args.factor_code].tolist()
+    close_list = data_point['close'].tolist()
 
     code_list, factor_list, close_list = filter_stocks(code_list=code_list, factor_list=factor_list, close_list=close_list)
 
     for lag in range(1, 13):
-        if month_data_idx + lag >= len(month_data_ary):
+        if time_idx + lag >= len(data_seq_list):
             continue
-        future_month_data = month_data_ary[month_data_idx + 1]
-        future_code_list = future_month_data['code_x'].tolist()
-        future_close_list = future_month_data['close'].tolist()
+        future_data_point = data_seq_list[time_idx + 1]
+        future_code_list = future_data_point['code'].tolist()
+        future_close_list = future_data_point['close'].tolist()
 
         future_code_list, _, future_close_list = filter_stocks(code_list=future_code_list, close_list=future_close_list)
 
-        # calculate return for each stock in current month list
+        # calculate return for each stock in current data point
         return_list = []
         for idx, code in enumerate(code_list):
             current_close = close_list[idx]
             if code not in future_code_list:
-                # this stock is not included in the future month data
+                # this stock is not included in the future data point
                 return_list.append(None)
                 continue
             next_idx = future_code_list.index(code)
@@ -101,31 +101,31 @@ for rank_ic_ary in rank_ic_ary_list:
 output.draw_decay_profile(ave_lag_ic, success_rate)
 
 # calculate fractiles
-# for each month, calculate the return for each fractile
+# for each time step, calculate the return for each fractile
 fractile_return_list = []
-for month_data_idx in range(len(month_data_ary) - 1):
+for time_idx in range(len(data_seq_list) - 1):
 
-    month_data = month_data_ary[month_data_idx]
-    code_list = month_data['code_x'].tolist()
-    factor_list = month_data[args.factor_code].tolist()
-    close_list = month_data['close'].tolist()
+    data_point = data_seq_list[time_idx]
+    code_list = data_point['code_x'].tolist()
+    factor_list = data_point[args.factor_code].tolist()
+    close_list = data_point['close'].tolist()
 
     # filter out those stocks that do not exist
     code_list, factor_list, close_list = filter_stocks(code_list=code_list, factor_list=factor_list, close_list=close_list)
 
-    next_month_data = month_data_ary[month_data_idx + 1]
-    next_code_list = next_month_data['code_x'].tolist()
-    next_close_list = next_month_data['close'].tolist()
+    next_data_point = data_seq_list[time_idx + 1]
+    next_code_list = next_data_point['code_x'].tolist()
+    next_close_list = next_data_point['close'].tolist()
 
     # filter out those stocks that do not exist
     next_code_list, _, next_close_list = filter_stocks(code_list=next_code_list, close_list=next_close_list)
 
-    # calculate return for each stock in current month list
+    # calculate return for each stock in current data point
     return_list = []
     for idx, code in enumerate(code_list):
         current_close = close_list[idx]
         if code not in next_code_list:
-            # this stock is not included in the future month data
+            # this stock is not included in the future data point
             return_list.append(None)
             continue
         next_idx = next_code_list.index(code)
@@ -170,10 +170,10 @@ for month_data_idx in range(len(month_data_ary) - 1):
 
 sim_return = np.ones((cfg.nr_fractile + 1, len(fractile_return_list) + 1)) * 100
 
-for month_idx, fractile_return in enumerate(fractile_return_list):
+for time_idx, fractile_return in enumerate(fractile_return_list):
     for fractile_idx in range(cfg.nr_fractile + 1):
-        sim_return[fractile_idx, month_idx + 1] = \
-            sim_return[fractile_idx, month_idx] * (1 + fractile_return[fractile_idx])
+        sim_return[fractile_idx, time_idx + 1] = \
+            sim_return[fractile_idx, time_idx] * (1 + fractile_return[fractile_idx])
 
 output.draw_fractile(sim_return)
 
