@@ -27,7 +27,7 @@ def calculate_ic(data_seq_list, factor_code):
         rank_ic_ary_list.append([])
 
     for time_idx in range(len(data_seq_list) - 1):
-    
+
         data_point = data_seq_list[time_idx]
         code_list = data_point['code'].tolist()
         factor_list = data_point[factor_code].tolist()
