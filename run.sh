@@ -15,6 +15,8 @@
 # python3 factor_selection.py --factor_code trix_12_5d
 # python3 factor_selection.py --factor_code trix_12_10d
 
+
+python3 factor_selection.py --factor_code adratio
 python3 factor_selection.py --factor_code arturndays
 python3 factor_selection.py --factor_code arturnover
 python3 factor_selection.py --factor_code bips
@@ -44,3 +46,22 @@ python3 factor_selection.py --factor_code rateofreturn
 python3 factor_selection.py --factor_code roe
 python3 factor_selection.py --factor_code seg
 python3 factor_selection.py --factor_code sheqratio
+python3 factor_selection.py --factor_code BVY
+python3 factor_selection.py --factor_code CF2TA
+python3 factor_selection.py --factor_code SY
+python3 factor_selection.py --factor_code EBT2TA
+python3 factor_selection.py --factor_code EBITDA2TA
+python3 factor_selection.py --factor_code EBITDA
+python3 factor_selection.py --factor_code EBIT
+python3 factor_selection.py --factor_code general_equity
+python3 factor_selection.py --factor_code flow_equity
+python3 factor_selection.py --factor_code pe
+
+# ["adratio", "arturndays", "arturnover", "bips", "business_income", "bvps", "cashflowratio", "cashratio", "cf_liabilities", "cf_nm", "cf_sales", "currentasset_days", "currentasset_turnover", "currentratio", "epcf", "eps", "epsg", "gross_profit_rate", "icratio", "inventory_turnover", "mbrg", "nav", "net_profit_ratio", "net_profits", "nprg", "quickratio", "rateofreturn", "roe", "seg", "sheqratio", "BVY", "CF2TA", "SY", "EBT2TA", "EBITDA2TA", "EBITDA", "EBIT", "general_equity", "flow_equity", "EBITDA2TA", "pe"]
+
+
+
+
+
+
+

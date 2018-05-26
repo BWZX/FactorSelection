@@ -14,6 +14,9 @@ from cfgs.config import cfg
 plt.rcParams['axes.unicode_minus'] = False
 plt.style.use('ggplot')
 
+def ary_has_nan(ary):
+    return np.sum(np.isnan(ary).astype(np.int)) > 0
+
 def get_sort_idx(items):
     idxes = np.argsort(-items)
     sort_idxes = np.zeros_like(items)

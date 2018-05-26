@@ -1,17 +1,17 @@
 import pickle
 import numpy as np
 import argparse
-
 from sklearn.ensemble import RandomForestClassifier
 
 from factor_selection import *
+from scipy.stats.stats import pearsonr
 import scipy.stats as ss
 
 from utils import *
 from cfgs.config import cfg
 
 cycle = 12
-sel_factor_num = 10
+sel_factor_num = 3
 
 data_file = "data/hs300_2010_2017_financial_1m.pkl"
 factor_list = ["adratio", "arturndays", "arturnover", "bips", "business_income", "bvps", "cashflowratio", "cashratio", "cf_liabilities", "cf_nm", "cf_sales", "currentasset_days", "currentasset_turnover", "currentratio", "epcf", "eps", "epsg", "gross_profit_rate", "icratio", "inventory_turnover", "mbrg", "nav", "net_profit_ratio", "net_profits", "nprg", "quickratio", "rateofreturn", "roe", "seg", "sheqratio", "BVY", "CF2TA", "SY", "EBT2TA", "EBITDA2TA", "EBITDA", "EBIT", "general_equity", "flow_equity", "EBITDA2TA", "pe"]
@@ -23,7 +23,12 @@ data_seq = pickle.load(f)
 
 period_num = len(data_seq)
 
-corr_rate_list = []
+val_corr_rate_list = []
+train_corr_rate_list = []
+
+sel_factors_list = []
+sel_ic_list = []
+sel_t_stat_list = []
 
 for time_step in range(cycle, period_num - 1):
     cur_data_seq = data_seq[time_step-cycle:time_step]
@@ -35,12 +40,21 @@ for time_step in range(cycle, period_num - 1):
         ic_result = ic_result[0]
         t_stat = ss.ttest_1samp(ic_result, 0)
 
-        factor_ic_list.append(np.mean(ic_result))
-        t_stat_list.append(t_stat.statistic)
+        factor_ic_list.append(np.abs(np.mean(ic_result)))
+        t_stat_list.append(np.abs(t_stat.statistic))
 
     # sort factor by rank IC and t_stat, and choose several factors
     ic_sort = np.argsort(factor_ic_list)[::-1]
     sel_factor_idx = ic_sort[:sel_factor_num]
+
+    sel_factors = [factor_list[e] for e in sel_factor_idx]
+    sel_ic = [factor_ic_list[e] for e in sel_factor_idx]
+    sel_t_stat = [t_stat_list[e] for e in sel_factor_idx]
+
+    sel_factors_list.append(sel_factors)
+    sel_ic_list.append(sel_ic)
+    sel_t_stat_list.append(sel_t_stat)
+
 
     # use these factors to construct model to predict return
     # 当前时间点是temp_step-1，训练数据从time_step-cycle一直到time_step-1，即time_step-cycle:time_step，共计cycle个时间点
@@ -53,10 +67,10 @@ for time_step in range(cycle, period_num - 1):
     # cur_data_seq should include one more data point, which is used to generate test data
     cur_data_seq = data_seq[time_step-cycle:time_step + 1]
     train_samples = []
-    train_return_vals = []
+    train_pred_vals = []
     for t in range(cycle):
 
-        cur_samples = []
+        cur_factors = []
         cur_return_vals = []
 
         cur_data = cur_data_seq[t]
@@ -76,7 +90,7 @@ for time_step in range(cycle, period_num - 1):
             has_nan = False
             for factor_idx in sel_factor_idx:
                 factor_name = factor_list[factor_idx]
-                factor_val = stock_data[factor_name]
+                factor_val = float(stock_data[factor_name])
                 if np.isnan(factor_val) or np.isinf(factor_val):
                     has_nan = True
                     break
@@ -92,35 +106,60 @@ for time_step in range(cycle, period_num - 1):
 
             return_val = next_close / close - 1
 
-            cur_samples.append(np.asarray(input_factors))
+            cur_factors.append(np.asarray(input_factors))
             cur_return_vals.append(return_val)
 
-        cur_samples = np.asarray(cur_samples)
+        cur_factors = np.asarray(cur_factors)
         cur_return_vals = np.asarray(cur_return_vals)
 
-        cur_samples = np.argsort(cur_samples, axis=0)
-        # cur_return_vals = np.argsort(cur_return_vals)
-        cur_return_vals = (cur_return_vals > index_return).astype(np.int)
+        stock_num = cur_factors.shape[0]
+        cur_samples = []
+        for factor_idx in range(sel_factor_num):
+            cur_factor_sample = cur_factors[:, factor_idx]
+            cur_factor_order = get_sort_idx(cur_factor_sample)
+            cur_samples.append(cur_factor_order)
+        cur_samples = np.vstack(cur_samples)
+        cur_samples = np.transpose(cur_samples)
+        cur_return_sort_vals = get_sort_idx(cur_return_vals)
+        cur_pred_vals = (cur_return_vals > index_return).astype(np.int)
 
         if t == cycle - 1:
             test_samples = cur_samples
             test_return_vals = cur_return_vals
+            test_pred_vals = cur_pred_vals
+            test_return_sort_vals = cur_return_sort_vals
         else:
             train_samples.append(cur_samples)
-            train_return_vals.append(cur_return_vals)
+            train_pred_vals.append(cur_pred_vals)
 
     train_samples = np.vstack(train_samples)
-    train_return_vals = np.hstack(train_return_vals)
+    train_pred_vals = np.hstack(train_pred_vals)
 
     # training and test data for one time step are collected
 
-    clf = RandomForestClassifier(n_estimators=200)
-    predict_return_vals = clf.predict(test_samples)
-    corr_num = np.sum((predict_return_vals == test_return_vals).astype(np.int))
-    corr_rate = corr_num / test_return_vals.shape[0]
+    if ary_has_nan(train_samples) or ary_has_nan(train_pred_vals) or ary_has_nan(test_samples) or ary_has_nan(test_pred_vals):
+        import pdb
+        pdb.set_trace()
 
-    print(corr_rate)
-    corr_rate_list.append(corr_rate)
+    clf = RandomForestClassifier(n_estimators=20)
+
+    clf.fit(train_samples, train_pred_vals)
+
+    val_predict_return_vals = clf.predict(test_samples)
+    val_corr_num = np.sum((val_predict_return_vals == test_pred_vals).astype(np.int))
+    val_corr_rate = val_corr_num / test_pred_vals.shape[0]
+
+    train_predict_return_vals = clf.predict(train_samples)
+    train_corr_num = np.sum((train_predict_return_vals == train_pred_vals).astype(np.int))
+    train_corr_rate = train_corr_num / train_pred_vals.shape[0]
+
+    print("val: %.2f" % val_corr_rate)
+    print("train: %.2f" % train_corr_rate)
+    val_corr_rate_list.append(val_corr_rate)
+    train_corr_rate_list.append(train_corr_rate)
+
+    import pdb
+    pdb.set_trace()
 
 import pdb
 pdb.set_trace()

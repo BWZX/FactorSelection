@@ -19,11 +19,11 @@ from data import load_data
 
 from cfgs.config import cfg
 
-def calculate_ic(data_seq_list, factor_code):
+def calculate_ic(data_seq_list, factor_code, lag_num=12):
 
     # calculate rank ICs for different lags
     rank_ic_ary_list = []
-    for _ in range(12):
+    for _ in range(lag_num):
         rank_ic_ary_list.append([])
 
     for time_idx in range(len(data_seq_list) - 1):
@@ -35,7 +35,7 @@ def calculate_ic(data_seq_list, factor_code):
     
         code_list, factor_list, close_list = filter_stocks(code_list=code_list, factor_list=factor_list, close_list=close_list)
     
-        for lag in range(1, 13):
+        for lag in range(1, lag_num+1):
             if time_idx + lag >= len(data_seq_list):
                 continue
             future_data_point = data_seq_list[time_idx + 1]
@@ -71,7 +71,7 @@ def calculate_ic(data_seq_list, factor_code):
     
             factor_rank = get_sort_idx(factor_ary)
             return_rank = get_sort_idx(return_ary)
-    
+
             rank_ic, _ = pearsonr(return_rank, factor_rank)
     
             rank_ic_ary_list[lag - 1].append(rank_ic)
