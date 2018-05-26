@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import argparse
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from factor_selection import *
 from scipy.stats.stats import pearsonr
@@ -10,8 +11,8 @@ import scipy.stats as ss
 from utils import *
 from cfgs.config import cfg
 
-cycle = 12
-sel_factor_num = 3
+cycle = 6
+sel_factor_num = 1
 
 data_file = "data/hs300_2010_2017_financial_1m.pkl"
 factor_list = ["adratio", "arturndays", "arturnover", "bips", "business_income", "bvps", "cashflowratio", "cashratio", "cf_liabilities", "cf_nm", "cf_sales", "currentasset_days", "currentasset_turnover", "currentratio", "epcf", "eps", "epsg", "gross_profit_rate", "icratio", "inventory_turnover", "mbrg", "nav", "net_profit_ratio", "net_profits", "nprg", "quickratio", "rateofreturn", "roe", "seg", "sheqratio", "BVY", "CF2TA", "SY", "EBT2TA", "EBITDA2TA", "EBITDA", "EBIT", "general_equity", "flow_equity", "EBITDA2TA", "pe"]
@@ -52,9 +53,10 @@ for time_step in range(cycle, period_num - 1):
     sel_t_stat = [t_stat_list[e] for e in sel_factor_idx]
 
     sel_factors_list.append(sel_factors)
-    sel_ic_list.append(sel_ic)
-    sel_t_stat_list.append(sel_t_stat)
+    sel_ic_list.append(np.mean(sel_ic))
+    sel_t_stat_list.append(np.mean(sel_t_stat))
 
+    # sel_factor_idx = [40]
 
     # use these factors to construct model to predict return
     # 当前时间点是temp_step-1，训练数据从time_step-cycle一直到time_step-1，即time_step-cycle:time_step，共计cycle个时间点
@@ -68,6 +70,7 @@ for time_step in range(cycle, period_num - 1):
     cur_data_seq = data_seq[time_step-cycle:time_step + 1]
     train_samples = []
     train_pred_vals = []
+    train_return_sort_vals = []
     for t in range(cycle):
 
         cur_factors = []
@@ -76,6 +79,7 @@ for time_step in range(cycle, period_num - 1):
         cur_data = cur_data_seq[t]
         next_data = cur_data_seq[t + 1]
         index_return = -1
+
         for stock_idx, stock_data in cur_data.iterrows():
             if stock_data['code'] == index_code:
                 # save the index return
@@ -131,6 +135,7 @@ for time_step in range(cycle, period_num - 1):
         else:
             train_samples.append(cur_samples)
             train_pred_vals.append(cur_pred_vals)
+            train_return_sort_vals.append(cur_return_sort_vals)
 
     train_samples = np.vstack(train_samples)
     train_pred_vals = np.hstack(train_pred_vals)
@@ -141,8 +146,8 @@ for time_step in range(cycle, period_num - 1):
         import pdb
         pdb.set_trace()
 
-    clf = RandomForestClassifier(n_estimators=20)
-
+    # clf = RandomForestClassifier(n_estimators=20)
+    clf = LogisticRegression()
     clf.fit(train_samples, train_pred_vals)
 
     val_predict_return_vals = clf.predict(test_samples)
@@ -158,9 +163,21 @@ for time_step in range(cycle, period_num - 1):
     val_corr_rate_list.append(val_corr_rate)
     train_corr_rate_list.append(train_corr_rate)
 
-    import pdb
-    pdb.set_trace()
+fig, ax = plt.subplots()
+ax.plot(np.arange(cycle, len(val_corr_rate_list) + cycle), np.asarray(val_corr_rate_list), color='b', linewidth=3, label='val corr rate')
+ax.plot(np.arange(cycle, len(train_corr_rate_list) + cycle), np.asarray(train_corr_rate_list), color='r', linewidth=3, label='train corr rate')
+ax.legend(loc='upper right')
+plt.title('val: %.2f, train: %.2f (%d factors)' % (np.mean(val_corr_rate_list), np.mean(train_corr_rate_list), sel_factor_num))
 
-import pdb
-pdb.set_trace()
+fig.savefig('corr_rate_cycle_%d_factor_%d.png' % (cycle, sel_factor_num))
+plt.clf()
+plt.close()
 
+
+
+fig, ax = plt.subplots()
+ax.plot(np.arange(cycle, len(val_corr_rate_list) + cycle), np.asarray(sel_ic_list), color='b', linewidth=3, label='avg rank ic')
+
+fig.savefig('avg_rank_ic_cycle_%d_factor_%d.png' % (cycle, sel_factor_num))
+plt.clf()
+plt.close()

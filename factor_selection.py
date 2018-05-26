@@ -27,7 +27,6 @@ def calculate_ic(data_seq_list, factor_code, lag_num=12):
         rank_ic_ary_list.append([])
 
     for time_idx in range(len(data_seq_list) - 1):
-
         data_point = data_seq_list[time_idx]
         code_list = data_point['code'].tolist()
         factor_list = data_point[factor_code].tolist()
@@ -55,14 +54,14 @@ def calculate_ic(data_seq_list, factor_code, lag_num=12):
                 next_idx = future_code_list.index(code)
                 next_close = future_close_list[next_idx]
                 return_list.append(next_close / current_close - 1)
-    
+
             # skip the first code, which should be the index code
             factor_ary = np.asarray(factor_list[1:], dtype=np.float32)
             return_ary = np.asarray(return_list[1:], dtype=np.float32)
     
             # filter the None value
-            factor_filter = factor_ary != None
-            return_filter = return_ary != None
+            factor_filter = np.logical_not(np.isnan(factor_ary))
+            return_filter = np.logical_not(np.isnan(return_ary))
     
             data_filter = factor_filter & return_filter
     
