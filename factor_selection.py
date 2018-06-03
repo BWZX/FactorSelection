@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument('--start_year', type=int, default=2010)
     parser.add_argument('--end_year', type=int, default=2017)
     parser.add_argument('--period', default='1m')
-    parser.add_argument('--data_file', default="hs300_2010_2017_financial_1m.pkl")
+    parser.add_argument('--data_file', default="hs300_2010_2017_1m.pkl")
     args = parser.parse_args()
     
     data_seq_list = load_data(args.data_file, "2010-01", "2017-12", factor_list=[args.factor_code])
